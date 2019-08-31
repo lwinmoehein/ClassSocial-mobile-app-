@@ -125,7 +125,8 @@ public class Login extends AppCompatActivity {
 
             URL url = null;
             try {
-                url = new URL(VarStatic.getHostName()+"/account/login.php?name="+ URLEncoder.encode(userName)+"&password="+URLEncoder.encode(userPassword));
+                url =
+                        new URL(VarStatic.getHostName()+"/user/sigin?name="+ URLEncoder.encode(userName)+"&password="+URLEncoder.encode(userPassword));
                 conn = (HttpURLConnection) url.openConnection();
                 conn.setConnectTimeout(6000);
                 conn.connect();

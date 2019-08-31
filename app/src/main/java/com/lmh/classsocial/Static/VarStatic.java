@@ -6,7 +6,7 @@ package com.lmh.classsocial.Static;
 
 public class VarStatic {
     //init static vars
-    private static final String hostName="http://192.168.43.201/3csakings";
+    private static final String hostName="http://192.168.42.51/classsocial/public/api/";
     //set getters and setters
     public static String getHostName() {
         return VarStatic.hostName;

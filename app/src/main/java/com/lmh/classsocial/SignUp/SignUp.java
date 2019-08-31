@@ -118,13 +118,14 @@ public class SignUp extends AppCompatActivity {
 
             URL url = null;
             try {
-                url = new URL(VarStatic.getHostName() + "/account/signup.php?name="
+                url = new URL(VarStatic.getHostName() + "student?student_name="
                         +
-                        URLEncoder.encode(accName) + "&password=" +
-                        URLEncoder.encode(accPassword) + "&phno=" +
+                        URLEncoder.encode(accName) + "&student_password=" +
+                        URLEncoder.encode(accPassword) + "&student_phoneno=" +
                         URLEncoder.encode(accPhoneNo));
                 conn = (HttpURLConnection) url.openConnection();
                 conn.setConnectTimeout(7000);
+                conn.setRequestMethod("POST");
                 conn.connect();
                 InputStream in = null;
                 in = conn.getInputStream();
