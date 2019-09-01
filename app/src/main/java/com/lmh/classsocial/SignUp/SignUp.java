@@ -10,9 +10,17 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 import com.lmh.classsocial.R;
 import com.lmh.classsocial.Static.VarStatic;
 
@@ -25,6 +33,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
 
+import es.dmoral.toasty.Toasty;
+
 
 public class SignUp extends AppCompatActivity {
     //initialize  vars
@@ -32,6 +42,7 @@ public class SignUp extends AppCompatActivity {
     //initialize ui vars
     EditText Name, Password, ConfirmPassword, PhoneNo;
     TextView tvStatus;
+    private ProgressBar progressbar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,6 +55,7 @@ public class SignUp extends AppCompatActivity {
         Password = (EditText) findViewById(R.id.edt_pass);
         ConfirmPassword = (EditText) findViewById(R.id.edt_pass_confirm);
         PhoneNo = (EditText) findViewById(R.id.edt_phone_no);
+        progressbar=(ProgressBar)findViewById(R.id.progressBar);
 
 
 
@@ -75,80 +87,34 @@ public class SignUp extends AppCompatActivity {
     }
 
     private void createAccount() {
-        new SignUpAccouontsAsyn().execute();
+        progressbar.setVisibility(View.VISIBLE);
+        RequestQueue queue = Volley.newRequestQueue(this);
+        StringRequest strreq = new StringRequest(Request.Method.POST,
+                VarStatic.getHostName()+"student?"+"student_name="
+                        +URLEncoder.encode(accName)+ "&student_phoneno=" +URLEncoder.encode(accPhoneNo)+
+                "&student_password="+URLEncoder.encode(accPassword)+"&" +
+                        "student_email=not given"+"&is_followed=no&is_ec=no",
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String Response) {
+                        // get response
+                        if(Response.equals("success")){
+
+                            Toasty.success(getApplicationContext(), "Success!", Toast.LENGTH_SHORT, true).show();
+                        }
+                        progressbar.setVisibility(View.GONE);
+                    }
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError e) {
+                e.printStackTrace();
+                Toasty.error(getApplicationContext(), "Error creating account", Toast.LENGTH_SHORT, true).show();
+                progressbar.setVisibility(View.GONE);
+            }
+        });
+        queue.add(strreq);
     }
     //Sign up Network class
 
-    private class SignUpAccouontsAsyn extends AsyncTask<String, String, String> {
-        HttpURLConnection conn;
-        ProgressDialog progressDialog;
-        String ans = "";
 
-
-        @Override
-        protected void onPreExecute() {
-
-            super.onPreExecute();
-            progressDialog = new ProgressDialog(SignUp.this);
-            progressDialog.setTitle("creating an account");
-            progressDialog.setMessage("please wait..");
-            progressDialog.show();
-
-        }
-
-        @Override
-        protected void onPostExecute(String s) {
-            progressDialog.hide();
-            if(ans.equals("success")){
-                tvStatus.setText("Succefull created an account");
-                tvStatus.setTextColor(Color.GREEN);
-                clearTextViews();
-                finish();
-            }else{
-                tvStatus.setText("Something went wrong,is your internet working?");
-                tvStatus.setTextColor(Color.RED);
-            }
-
-
-        }
-
-        @Override
-        protected String doInBackground(String... params) {
-
-
-            URL url = null;
-            try {
-                url = new URL(VarStatic.getHostName() + "student?student_name="
-                        +
-                        URLEncoder.encode(accName) + "&student_password=" +
-                        URLEncoder.encode(accPassword) + "&student_phoneno=" +
-                        URLEncoder.encode(accPhoneNo));
-                conn = (HttpURLConnection) url.openConnection();
-                conn.setConnectTimeout(7000);
-                conn.setRequestMethod("POST");
-                conn.connect();
-                InputStream in = null;
-                in = conn.getInputStream();
-                InputStreamReader inReader = new InputStreamReader(in);
-
-                BufferedReader br = new BufferedReader(inReader);
-
-                String s = null;
-                while ((s = br.readLine()) != null) {
-                    ans = s;
-                    System.out.println(s);
-
-
-                }
-
-                conn.disconnect();
-                return ans;
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return ans;
-        }
-    }
 }
