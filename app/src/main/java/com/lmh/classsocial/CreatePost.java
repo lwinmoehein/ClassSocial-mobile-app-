@@ -15,7 +15,15 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.Toast;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
+import com.lmh.classsocial.SignUp.SignUp;
 import com.lmh.classsocial.Static.FunctionsStatic;
 import com.lmh.classsocial.Static.ImageStatic;
 import com.lmh.classsocial.Static.UIStatic;
@@ -36,7 +44,10 @@ import org.apache.http.util.EntityUtils;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.ArrayList;
+
+import es.dmoral.toasty.Toasty;
 
 
 public class CreatePost extends AppCompatActivity {
@@ -108,7 +119,7 @@ public class CreatePost extends AppCompatActivity {
 
     public void onCreatePost(View view) {
         postText = edtPost.getText().toString();
-        new PostPost().execute();
+        createPost();
     }
 
     public void onChooseImage(View view) {
@@ -117,71 +128,37 @@ public class CreatePost extends AppCompatActivity {
         startActivityForResult(photoPickerIntent, 1);
     }
 
+    private void createPost() {
+        RequestQueue queue = Volley.newRequestQueue(this);
+        StringRequest strreq = new StringRequest(Request.Method.POST,
+                VarStatic.getHostName()+"post?"+"acc_id="
+                        + URLEncoder.encode(userId)+ "&acc_name=" +URLEncoder.encode(userName)+
+                        "&post_body="+URLEncoder.encode(postText),
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String Response) {
+                        // get response
+                        if(Response.equals("success")){
+                            Toasty.success(getApplicationContext(), "Posted!", Toast.LENGTH_SHORT, true).show();
+                            finish();
+
+                        }
+
+                    }
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError e) {
+                e.printStackTrace();
+                Toasty.error(getApplicationContext(), "Error posting", Toast.LENGTH_SHORT, true).show();
+            }
+        });
+        queue.add(strreq);
+    }
+
     public void onExitPost(View view) {
         finish();
     }
 
-
-    class PostPost extends AsyncTask<String, String, String> {
-        ProgressDialog progressDialog;
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-
-
-        }
-
-        @Override
-        protected void onPostExecute(String s) {
-            super.onPostExecute(s);
-            if (!s.equals("false")) {
-                UIStatic.showSnack(getWindow(), "Successfully posted", "success");
-                finish();
-            } else {
-                UIStatic.showSnack(getWindow(), "Error posting...", "error");
-            }
-
-        }
-
-        @Override
-        protected String doInBackground(String... params) {
-            String ans = "";
-            final ArrayList<NameValuePair> nameValuePairs = new
-                    ArrayList<NameValuePair>();
-            //adding request parameters
-            nameValuePairs.add(new BasicNameValuePair("userid", userId));
-            if (!imageurl.equals("")) {
-                String background = ImageStatic.getFileInString(imageurl);
-                nameValuePairs.add(new BasicNameValuePair("img", background));
-            }
-            nameValuePairs.add(new BasicNameValuePair("username", userName));
-            nameValuePairs.add(new BasicNameValuePair("posttext", postText));
-            HttpClient httpclient = new DefaultHttpClient();
-            HttpPost httppost = null;
-            httppost = new HttpPost(VarStatic.getHostName() + "/post/createpost.php");
-            try {
-
-                httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs, "UTF-8"));
-            } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
-            }
-            try {
-
-                HttpResponse response = httpclient.execute(httppost);
-                HttpEntity entity = response.getEntity();
-                ans = EntityUtils.toString(entity);
-
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-
-            return ans;
-        }
-
-
-    }
 
 
 }

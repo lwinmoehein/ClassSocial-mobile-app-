@@ -51,6 +51,7 @@ public class MainTask extends AppCompatActivity
     //initialize vars
     String strAccount, strInfo;
     SharedPreferences sharedPreferences;
+
     View header;
     //initialize ui
     private ImageView profile;
@@ -80,6 +81,7 @@ public class MainTask extends AppCompatActivity
         //set account info
         NavigationView navView = (NavigationView) findViewById(R.id.nav_view);
         navView.setNavigationItemSelectedListener(this);
+
         header = navView.getHeaderView(0);
         profile = (ImageView) header.findViewById(R.id.profile_image);
         accountName = (TextView) header.findViewById(R.id.account_name);
@@ -94,9 +96,9 @@ public class MainTask extends AppCompatActivity
 
         tabLayout.setupWithViewPager(viewPager);
         tabLayout.getTabAt(0).setIcon(tabIcons[0]);
-        tabLayout.getTabAt(1).setIcon(tabIcons[1]);
-        tabLayout.getTabAt(2).setIcon(tabIcons[2]);
-        tabLayout.getTabAt(3).setIcon(tabIcons[3]);
+//        tabLayout.getTabAt(1).setIcon(tabIcons[1]);
+//        tabLayout.getTabAt(2).setIcon(tabIcons[2]);
+//        tabLayout.getTabAt(3).setIcon(tabIcons[3]);
 
        
         //
@@ -134,34 +136,34 @@ public class MainTask extends AppCompatActivity
         //image
         //header width height
 
-
-           Picasso.with(this).load(profileName).placeholder(R.mipmap.avator_placeholder).
-                transform(new CircleTransformation()).
-                resize(100, 100).centerCrop().
-                error(R.mipmap.avator_placeholder).memoryPolicy(MemoryPolicy.NO_CACHE,MemoryPolicy.NO_STORE).
-                into(profile);
-           Picasso.with(this).load(coverName).placeholder(R.mipmap.background_placeholder).placeholder(R.mipmap.background_placeholder)
-                   .error(R.mipmap.background_placeholder)
-                   .resize(300,160).noFade()
-                   .centerCrop().
-                   memoryPolicy(MemoryPolicy.NO_CACHE,MemoryPolicy.NO_STORE).
-                   into(new Target() {
-           @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
-           @Override
-           public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom loadedFrom) {
-               header.setBackground(new BitmapDrawable(getApplicationContext().getResources(),bitmap));
-           }
-
-           @Override
-           public void onBitmapFailed(Drawable drawable) {
-
-           }
-
-           @Override
-           public void onPrepareLoad(Drawable drawable) {
-
-           }
-       });
+//
+//           Picasso.with(this).load(profileName).placeholder(R.mipmap.avator_placeholder).
+//                transform(new CircleTransformation()).
+//                resize(100, 100).centerCrop().
+//                error(R.mipmap.avator_placeholder).memoryPolicy(MemoryPolicy.NO_CACHE,MemoryPolicy.NO_STORE).
+//                into(profile);
+//           Picasso.with(this).load(coverName).placeholder(R.mipmap.background_placeholder).placeholder(R.mipmap.background_placeholder)
+//                   .error(R.mipmap.background_placeholder)
+//                   .resize(300,160).noFade()
+//                   .centerCrop().
+//                   memoryPolicy(MemoryPolicy.NO_CACHE,MemoryPolicy.NO_STORE).
+//                   into(new Target() {
+//           @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
+//           @Override
+//           public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom loadedFrom) {
+//               header.setBackground(new BitmapDrawable(getApplicationContext().getResources(),bitmap));
+//           }
+//
+//           @Override
+//           public void onBitmapFailed(Drawable drawable) {
+//
+//           }
+//
+//           @Override
+//           public void onPrepareLoad(Drawable drawable) {
+//
+//           }
+//       });
 
 
     }
@@ -169,9 +171,9 @@ public class MainTask extends AppCompatActivity
     private void setUpViewPager(ViewPager viewPager) {
         ViewPagerAdapter adapter = new ViewPagerAdapter(getSupportFragmentManager());
         adapter.addFragment(new PostFragment(), "post");
-        adapter.addFragment(new PeopleListFragment(), "people");
-        adapter.addFragment(new MessageListFragment(), "message");
-        adapter.addFragment(new NotificationFragment(),"noti");
+//        adapter.addFragment(new PeopleListFragment(), "people");
+//        adapter.addFragment(new MessageListFragment(), "message");
+//        adapter.addFragment(new NotificationFragment(),"noti");
         viewPager.setAdapter(adapter);
     }
 

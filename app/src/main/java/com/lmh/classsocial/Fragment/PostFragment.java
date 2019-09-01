@@ -2,6 +2,7 @@ package com.lmh.classsocial.Fragment;
 
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -15,14 +16,18 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
+import android.widget.Toast;
 
+import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.lmh.classsocial.MainActivity;
 import com.lmh.classsocial.Model.Post;
 import com.lmh.classsocial.R;
+import com.lmh.classsocial.SignUp.SignUp;
 import com.lmh.classsocial.Static.FunctionsStatic;
 import com.lmh.classsocial.Static.VarStatic;
 import com.lmh.classsocial.UIAdapters.PostAdapter;
@@ -41,6 +46,8 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
+
+import es.dmoral.toasty.Toasty;
 
 
 /**
@@ -79,6 +86,7 @@ public class PostFragment extends android.support.v4.app.Fragment {
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        posts=new ArrayList<>();
         //crete if not exits ,share pref
         sharedPreferences = getActivity().getSharedPreferences("postconfig", Context.MODE_PRIVATE);
         sharePrefEditor = sharedPreferences.edit();
@@ -88,29 +96,14 @@ public class PostFragment extends android.support.v4.app.Fragment {
         errorPage = (LinearLayout) view.findViewById(R.id.post_err);
         USERID = FunctionsStatic.getUserId(getActivity());
 
-        setUpPostFragment();
+        getPosts(VarStatic.getHostName()+"posts");
 
-
-        refreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-            @Override
-            public void onRefresh() {
-                new GetPosts().execute();
-                refreshLayout.setRefreshing(false);
-            }
-        });
 
         //on post refresh
         recyclerPost.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
-                LinearLayoutManager linearLayoutManager = LinearLayoutManager.class.cast
-                        (recyclerView.getLayoutManager());
-                int totalitemCount = linearLayoutManager.getItemCount();
-                int lastVisible = linearLayoutManager.findLastCompletelyVisibleItemPosition();
-                boolean endReached = lastVisible + 1 >= totalitemCount;
-                if (totalitemCount > 0 && endReached) {
-                    new GetOlderPosts().execute();
-                }
+
             }
         });
 
@@ -126,350 +119,56 @@ public class PostFragment extends android.support.v4.app.Fragment {
 
     }
 
-    public void showErrorPage() {
-        posts.add(new Post("", "", "", "", "", "", "", "", ""));
-
-    }
-
-
-    public void commitOldestId() {
-        if (posts.size() > 1)
-            oldestpostid = posts.get(posts.size() - 1).getPost_id();
-    }
-
-    public void setUpPostFragment() {
-        posts = new ArrayList<>();
-        postAdapter = new PostAdapter(posts, getContext());
-        mLayoutManager = new LinearLayoutManager(getContext());
-        new GetPosts().execute();
-
-
-    }
-
-    public String getBiggestPostId(){
-        if (posts.size() > 1)
-          return   posts.get(0).getPost_id();
-        else return "0";
-    }
-
-    public String getSamllestPostId() {
-        commitOldestId();
-        System.out.println("latest pppppppppppp"+oldestpostid);
-        return oldestpostid;
-
-    }
-
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        posts.clear();
-        new GetPosts().execute();
-    }
-
-    //check latest posts
-    public void checkLatestPosts() {
-
-        System.out.println("lat post" +getBiggestPostId());
-        String url = VarStatic.getHostName() + "/post/checknewposts.php?userId=" +
-                URLEncoder.encode(USERID)
-                + "&latestpostid=" + URLEncoder.encode(getBiggestPostId());
-
-
-        RequestQueue requestQueue = Volley.newRequestQueue(getActivity());
-        StringRequest stringReq = new StringRequest(StringRequest.Method.GET, url, new
-                Response.Listener<String>() {
+    private void getPosts(String url){
+        RequestQueue queue = Volley.newRequestQueue(getActivity());
+        StringRequest strreq = new StringRequest(Request.Method.GET,
+                url,
+                new Response.Listener<String>() {
                     @Override
-                    public void onResponse(String s) {
-                        if (s.equals("yes")) {
-                            new GetLatestPost().execute();
+                    public void onResponse(String Response) {
+                        // get response
+                        //add json to posts array
+                        Log.d("response","post response");
 
-                        } else {
+                        try {
+                            JSONObject jsonObject=new JSONObject(Response);
 
+                            JSONArray jsonArray = jsonObject.getJSONArray("data");
+                            for (int i = 0; i < jsonArray.length(); i++) {
+                                JSONObject object = (JSONObject) jsonArray.get(i);
+                                String id = object.getString("id");
+                                String accId = object.getString("acc_id");
+                                String accName = object.getString("acc_name");
+                                String postBody = object.getString("post_body");
+                                String date = object.getString("created_at");
+                                String likes = object.getString("likes");
+                                String comments = object.getString("comments");
+                                String isPhoto = object.getString("isphoto");
+                                String liked = object.getString("liked");
+                                Post post = new Post(id, accId, accName, postBody, date, comments, likes, isPhoto,
+                                        liked);
+                                posts.add(post);
+                            }
+                            posts.add(new Post("id","ac","name","postb","dat","3","3","no","yes"));
+                            postAdapter=new PostAdapter(posts,getActivity());
+                            recyclerPost.setLayoutManager(new LinearLayoutManager(getActivity()));
+                            recyclerPost.setAdapter(postAdapter);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
                         }
+
+
+                        Toasty.success(getActivity(), "posts updated!", Toast.LENGTH_SHORT, true).show();
+
                     }
                 }, new Response.ErrorListener() {
             @Override
-            public void onErrorResponse(VolleyError volleyError) {
-
+            public void onErrorResponse(VolleyError e) {
+                e.printStackTrace();
+                Toasty.error(getActivity(), "error updating posts", Toast.LENGTH_SHORT, true).show();
             }
-        }
-        );
-        requestQueue.add(stringReq);
-        requestQueue.start();
-    }
-
-    private class GetPosts extends AsyncTask<String, String, String> {
-        HttpURLConnection conn;
-        ProgressDialog progressDialog;
-        boolean iserr = false;
-
-        @Override
-        protected void onPreExecute() {
-            refreshLayout.setRefreshing(true);
-        }
-
-        @Override
-        protected void onPostExecute(String s) {
-            posts.clear();
-            super.onPostExecute(s);
-            try {
-                JSONArray jsonArray = new JSONArray(s);
-                for (int i = 0; i < jsonArray.length(); i++) {
-                    JSONObject object = (JSONObject) jsonArray.get(i);
-                    String id = object.getString("id");
-                    String accId = object.getString("acc_id");
-                    String accName = object.getString("acc_name");
-                    String postBody = object.getString("post_body");
-                    String date = object.getString("date");
-                    String likes = object.getString("likes");
-                    String comments = object.getString("comments");
-                    String isPhoto = object.getString("isphoto");
-                    String liked = object.getString("liked");
-                    Post post = new Post(id, accId, accName, postBody, date, comments, likes, isPhoto,
-                            liked);
-                    posts.add(post);
-
-
-                }
-
-
-            } catch (JSONException e) {
-                e.printStackTrace();
-                iserr = true;
-
-
-            }
-            refreshLayout.setRefreshing(false);
-            recyclerPost.setLayoutManager(mLayoutManager);
-            recyclerPost.setItemAnimator(new DefaultItemAnimator());
-            recyclerPost.setAdapter(postAdapter);
-            refreshLayout.setRefreshing(false);
-            if (iserr) {
-                showErrorPage();
-            } else {
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            while (true) {
-                                try {
-                                    Thread.sleep(3000);
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                }
-                                checkLatestPosts();
-                            }
-                        } catch (Exception e) {
-                        }
-                    }
-                }).start();
-
-            }
-
-
-        }
-
-        @Override
-        protected String doInBackground(String... params) {
-            String ans = "";
-            URL url = null;
-            try {
-                url = new URL(VarStatic.getHostName() + "/post/getposts.php?userId=" +
-                        URLEncoder.encode(USERID));
-
-                conn = (HttpURLConnection) url.openConnection();
-                conn.setConnectTimeout(5000);
-                conn.connect();
-                InputStream in = null;
-                in = conn.getInputStream();
-                InputStreamReader inReader = new InputStreamReader(in);
-
-                BufferedReader br = new BufferedReader(inReader);
-
-                String s = null;
-                while ((s = br.readLine()) != null) {
-                    ans += s + "\n";
-                }
-                conn.disconnect();
-                return ans;
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-                iserr = true;
-            } catch (IOException e) {
-                e.printStackTrace();
-                iserr = true;
-            }
-            return ans;
-        }
-    }
-
-    //get latest post
-    private class GetLatestPost extends AsyncTask<String, String, String> {
-        HttpURLConnection conn;
-        ProgressDialog progressDialog;
-        List<Post> newposts = new ArrayList<>();
-
-        @Override
-        protected void onPreExecute() {
-
-        }
-
-        @Override
-        protected void onPostExecute(String s) {
-            commitOldestId();
-            super.onPostExecute(s);
-            try {
-                JSONArray jsonArray = new JSONArray(s);
-                for (int i = 0; i < jsonArray.length(); i++) {
-                    JSONObject object = (JSONObject) jsonArray.get(i);
-                    String id = object.getString("id");
-                    String accId = object.getString("acc_id");
-                    String accName = object.getString("acc_name");
-                    String postBody = object.getString("post_body");
-                    String date = object.getString("date");
-                    String likes = object.getString("likes");
-                    String comments = object.getString("comments");
-                    String isPhoto = object.getString("isphoto");
-                    String liked = object.getString("liked");
-                    Post post = new Post(id, accId, accName, postBody, date, comments, likes, isPhoto,
-                            liked);
-                    for (Post p : newposts) {
-                        if (!p.getPost_id().equals(post.getPost_id()))
-                            newposts.add(post);
-                    }
-
-                }
-
-                for (Post p : newposts) {
-                    postAdapter.addItem(p);
-                }
-                newposts.clear();
-
-
-            } catch (JSONException e) {
-                e.printStackTrace();
-
-            }
-
-        }
-
-        @Override
-        protected String doInBackground(String... params) {
-            Log.d("smalle","smallest");System.out.println("get smallest post id");
-            String ans = "";
-            URL url = null;
-            try {
-                url = new URL(VarStatic.getHostName() + "/post/getnewposts" +
-                        ".php?userId=" +
-                        URLEncoder.encode(USERID)
-                        + "&latestpostid=" + URLEncoder.encode(getBiggestPostId()));
-
-                conn = (HttpURLConnection) url.openConnection();
-                conn.setConnectTimeout(5000);
-                conn.connect();
-                InputStream in = null;
-                in = conn.getInputStream();
-                InputStreamReader inReader = new InputStreamReader(in);
-
-                BufferedReader br = new BufferedReader(inReader);
-
-                String s = null;
-                while ((s = br.readLine()) != null) {
-                    ans += s + "\n";
-                }
-                conn.disconnect();
-                return ans;
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return ans;
-        }
-    }
-
-    private class GetOlderPosts extends AsyncTask<String, String, String> {
-        HttpURLConnection conn;
-        ProgressDialog progressDialog;
-        List<Post> olderposts = new ArrayList<>();
-
-        @Override
-        protected void onPreExecute() {
-
-        }
-
-        @Override
-        protected void onPostExecute(String s) {
-            super.onPostExecute(s);
-            try {
-                JSONArray jsonArray = new JSONArray(s);
-                for (int i = 0; i < jsonArray.length(); i++) {
-                    JSONObject object = (JSONObject) jsonArray.get(i);
-                    String id = object.getString("id");
-                    String accId = object.getString("acc_id");
-                    String accName = object.getString("acc_name");
-                    String postBody = object.getString("post_body");
-                    String date = object.getString("date");
-                    String likes = object.getString("likes");
-                    String comments = object.getString("comments");
-                    String isPhoto = object.getString("isphoto");
-                    String liked = object.getString("liked");
-                    Post post = new Post(id, accId, accName, postBody, date, comments, likes, isPhoto,
-                            liked);
-                    for (Post p : olderposts) {
-                        if (!p.getPost_id().equals(post.getPost_id()))
-                            olderposts.add(post);
-                    }
-
-                }
-
-                for (Post p : olderposts) {
-                    postAdapter.addItemToBottom(p);
-                }
-                olderposts.clear();
-                commitOldestId();
-
-
-            } catch (JSONException e) {
-                e.printStackTrace();
-
-            }
-
-        }
-
-        @Override
-        protected String doInBackground(String... params) {
-            String ans = "";
-            URL url = null;
-            try {
-                url = new URL(VarStatic.getHostName() + "/post/getoldernewposts" +
-                        ".php?userId=" +
-                        URLEncoder.encode(USERID)
-                        + "&latestpostid=" + URLEncoder.encode(getSamllestPostId()));
-
-                conn = (HttpURLConnection) url.openConnection();
-                conn.setConnectTimeout(5000);
-                conn.connect();
-                InputStream in = null;
-                in = conn.getInputStream();
-                InputStreamReader inReader = new InputStreamReader(in);
-
-                BufferedReader br = new BufferedReader(inReader);
-
-                String s = null;
-                while ((s = br.readLine()) != null) {
-                    ans += s + "\n";
-                }
-                conn.disconnect();
-                return ans;
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return ans;
-        }
+        });
+        queue.add(strreq);
     }
 
 }

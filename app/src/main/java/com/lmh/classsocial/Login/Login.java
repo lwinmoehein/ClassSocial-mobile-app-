@@ -1,5 +1,6 @@
 package com.lmh.classsocial.Login;
 
+import android.app.MediaRouteButton;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
@@ -9,13 +10,29 @@ import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Base64;
+import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
+import com.lmh.classsocial.MainActivity;
 import com.lmh.classsocial.MainTask;
 import com.lmh.classsocial.R;
+import com.lmh.classsocial.SignUp.SignUp;
 import com.lmh.classsocial.Static.VarStatic;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -27,28 +44,39 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
 
+import es.dmoral.toasty.Toasty;
+
 
 public class Login extends AppCompatActivity {
     //declare vars
     String userName,userPassword;
     //declare ui vars
     EditText name,password;
-    TextView status;
+    private ProgressBar progressbar;
+
+    SharedPreferences sharedPreferences;
+    SharedPreferences.Editor shareEditor;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
+        //sharepref
+        sharedPreferences=this.getSharedPreferences("accountInfo", Context.MODE_PRIVATE);
+        shareEditor=sharedPreferences.edit();
+
+
         //initialize ui vars
-        status=(TextView)findViewById(R.id.tv_login_status);
         name=(EditText)findViewById(R.id.edt_login_user_name);
         password=(EditText)findViewById(R.id.edt_login_password);
+        progressbar=(ProgressBar)findViewById(R.id.progressBar);
     }
 
     public void onLogin(View view) {
         userName=name.getText().toString();
         userPassword=password.getText().toString();
-        new LoginAccouontsAsyn().execute();
+        LoginAccount();
 
     }
 
@@ -57,106 +85,54 @@ public class Login extends AppCompatActivity {
     }
 
     private void clearForm() {
-        status.setText("");
         name.setText("");
         password.setText("");
     }
+    private void LoginAccount() {
+        progressbar.setVisibility(View.VISIBLE);
+        RequestQueue queue = Volley.newRequestQueue(this);
+        StringRequest strreq = new StringRequest(Request.Method.GET,
+                VarStatic.getHostName()+"login?"+"user_name="
+                        +URLEncoder.encode(userName)+ "&user_password=" +URLEncoder.encode(userPassword),
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String Response) {
+                        // get response
+                        Log.d("RESPONSE ",Response);
+                        if(!Response.equals("false")){
+                            Toasty.success(getApplicationContext(), "Success!", Toast.LENGTH_SHORT, true).show();
+                            //store in sharepref
+                            Log.d("response",Response);
+                            try {
+                                JSONArray jsonArray=new JSONArray(Response);
+                                JSONObject jsonObject=(JSONObject)jsonArray.get(0);
+                                shareEditor.putString("USERID",jsonObject.getString("id"));
+                                shareEditor.putString("USERName",jsonObject.getString("name"));
+                                shareEditor.commit();
+                                Intent intent=new Intent(Login.this,MainTask.class);
+                                startActivity(intent);
 
-    //asyn login task
-    private class LoginAccouontsAsyn extends AsyncTask<String, String, String> {
-        HttpURLConnection conn;
-        ProgressDialog progressDialog;
-        String ans = "";
-        Boolean networkError=false;
-
-
-        @Override
-        protected void onPreExecute() {
-
-            super.onPreExecute();
-            progressDialog = new ProgressDialog(Login.this);
-            progressDialog.setTitle("Logging in");
-            progressDialog.setMessage("please wait..");
-            progressDialog.show();
-
-        }
-
-        @Override
-        protected void onPostExecute(String s) {
-            System.out.println("login return:"+ans);
-            progressDialog.hide();
-            if(!networkError){
-            if(s.equals("nameerror")){
-                status.setTextColor(Color.RED);
-                status.setText("User name does not exist");
-            }
-            if(s.equals("namepasserror")){
-                status.setTextColor(Color.RED);
-                status.setText("User name and password does not match");
-            }
-            if(!s.equals("nameerror")&&!s.equals("namepasserror")){
-                status.setTextColor(Color.GREEN);
-                status.setText("Logged in");
-                SharedPreferences sharedPrefs;
-                SharedPreferences.Editor editor;
-                sharedPrefs=getSharedPreferences("accountInfo", Context.MODE_PRIVATE);
-                editor=sharedPrefs.edit();
-                String accId=s,name=userName;
-                //accId= FunctionsStatic.decode64(accId);
-                //name=FunctionsStatic.decode64(name);
-                editor.putString("USERID",accId);
-                editor.putString("USERName",name);
-                editor.commit();
-                Intent intent=new Intent(getApplicationContext(), MainTask.class);
-                startActivity(intent);
-                finish();
-
-            }}else {
-                status.setTextColor(Color.RED);
-                status.setText("Sorry Network Error");
-            }
-
-        }
-
-        @Override
-        protected String doInBackground(String... params) {
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                                Log.d("JSON parse","json err");
+                            }
 
 
+                        }else{
+                            Toasty.error(getApplicationContext(), "Error Logging in", Toast.LENGTH_SHORT, true).show();
 
-            URL url = null;
-            try {
-                url =
-                        new URL(VarStatic.getHostName()+"/user/sigin?name="+ URLEncoder.encode(userName)+"&password="+URLEncoder.encode(userPassword));
-                conn = (HttpURLConnection) url.openConnection();
-                conn.setConnectTimeout(6000);
-                conn.connect();
-                InputStream in = null;
-                in = conn.getInputStream();
-                InputStreamReader inReader = new InputStreamReader(in);
-
-                BufferedReader br = new BufferedReader(inReader);
-
-                String s = null;
-                while ((s = br.readLine()) != null) {
-                    ans=s;
-                    System.out.println(s);
-
-
-                }
-
-                System.out.println("Success Connection");
-                conn.disconnect();
-                System.out.println("returned is"+ans);
-                return ans;
-            } catch (MalformedURLException e) {
+                        }
+                       progressbar.setVisibility(View.GONE);
+                    }
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError e) {
                 e.printStackTrace();
-                networkError=true;
-            } catch (IOException e) {
-                e.printStackTrace();
-                networkError=true;
+                Toasty.error(getApplicationContext(), "Error Logging in", Toast.LENGTH_SHORT, true).show();
+                progressbar.setVisibility(View.GONE);
             }
-            return ans;
-        }
+        });
+        queue.add(strreq);
     }
 
 

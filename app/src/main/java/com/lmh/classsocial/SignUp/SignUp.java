@@ -21,6 +21,7 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.lmh.classsocial.MainActivity;
 import com.lmh.classsocial.R;
 import com.lmh.classsocial.Static.VarStatic;
 
@@ -41,7 +42,7 @@ public class SignUp extends AppCompatActivity {
     String accName, accPassword, accConfirmPassword, accPhoneNo;
     //initialize ui vars
     EditText Name, Password, ConfirmPassword, PhoneNo;
-    TextView tvStatus;
+
     private ProgressBar progressbar;
 
     @Override
@@ -49,7 +50,6 @@ public class SignUp extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sign_up);
         //
-        tvStatus=(TextView)findViewById(R.id.tv_status);
 
         Name = (EditText) findViewById(R.id.edt_acc_name);
         Password = (EditText) findViewById(R.id.edt_pass);
@@ -80,8 +80,7 @@ public class SignUp extends AppCompatActivity {
         if (accPassword.equals(accConfirmPassword)) {
              createAccount();
         } else {
-            tvStatus.setText("Confirm password correctly");
-            tvStatus.setTextColor(Color.RED);
+           Toasty.warning(getApplicationContext(),"Confirm password correctly").show();
         }
 
     }
@@ -99,8 +98,10 @@ public class SignUp extends AppCompatActivity {
                     public void onResponse(String Response) {
                         // get response
                         if(Response.equals("success")){
-
                             Toasty.success(getApplicationContext(), "Success!", Toast.LENGTH_SHORT, true).show();
+                            Intent intent=new Intent(SignUp.this, MainActivity.class);
+                            startActivity(intent);
+
                         }
                         progressbar.setVisibility(View.GONE);
                     }

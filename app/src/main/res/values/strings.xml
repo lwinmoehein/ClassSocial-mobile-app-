@@ -14,4 +14,5 @@
 
     <string name="firebase_web_api_key">AIzaSyDSU9vB6BN28NwUbXFpD3cWTASQjE_eR3E</string>
     <string name="firebase_project_id">csakings-b4901</string>
+    <string name="enter_ph_no">Enter phone Number</string>
 </resources>

@@ -25,8 +25,8 @@
         </activity>
         <activity
             android:name=".MainTask"
-            android:label="3cst"
-            android:theme="@style/AppTheme" />
+            android:label="3CST-Social Network :P"
+            android:theme="@style/AppTheme.NoActionBar" />
         <activity
             android:name=".AboutActivity"
             android:parentActivityName=".MainTask"
